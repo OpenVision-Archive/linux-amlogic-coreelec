@@ -1203,6 +1203,7 @@ int ge2d_context_config_ex(struct ge2d_context_s *context,
 
 	return  0;
 }
+EXPORT_SYMBOL(ge2d_context_config_ex);
 
 int ge2d_context_config_ex_ion(struct ge2d_context_s *context,
 			   struct config_para_ex_ion_s *ge2d_config)
@@ -1482,7 +1483,6 @@ int ge2d_context_config_ex_ion(struct ge2d_context_s *context,
 
 	return  0;
 }
-EXPORT_SYMBOL(ge2d_context_config_ex);
 
 struct ge2d_context_s *create_ge2d_work_queue(void)
 {
