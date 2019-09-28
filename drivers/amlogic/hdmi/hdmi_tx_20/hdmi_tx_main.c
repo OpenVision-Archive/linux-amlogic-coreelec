@@ -3468,6 +3468,7 @@ static int amhdmitx_suspend(struct platform_device *pdev,
 				MISC_TMDS_PHY_OP, TMDS_PHY_DISABLE);
 	return 0;
 }
+EXPORT_SYMBOL(amhdmitx_suspend);
 
 static int amhdmitx_resume(struct platform_device *pdev)
 {
@@ -3490,6 +3491,8 @@ static int amhdmitx_resume(struct platform_device *pdev)
 #endif
 	return 0;
 }
+EXPORT_SYMBOL(amhdmitx_resume);
+
 #endif
 
 #ifdef CONFIG_INSTABOOT
