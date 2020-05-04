@@ -298,7 +298,7 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
 
 	name_dtid = of_flat_dt_get_le_dt_id();
 	if (name_dtid)
-		pr_info("CoreELEC dt-id: %s\n", name_dtid);
+		pr_info("Open Vision dt-id: %s\n", name_dtid);
 
 	machine_name = of_flat_dt_get_machine_name();
 	if (machine_name)
