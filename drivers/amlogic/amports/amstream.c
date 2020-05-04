@@ -87,6 +87,7 @@
 #define MAX_AMSTREAM_PORT_NUM ARRAY_SIZE(ports)
 u32 amstream_port_num;
 u32 amstream_buf_num;
+struct file *p_file = NULL;
 
 #if 0
 #if  MESON_CPU_TYPE == MESON_CPU_TYPE_MESONG9TV
@@ -1523,6 +1524,7 @@ static int amstream_open(struct inode *inode, struct file *file)
 		debug_filp = NULL;
 	}
 #endif
+	p_file = file;
 	mutex_unlock(&amstream_mutex);
 
 	if (port->type & PORT_TYPE_VIDEO) {
@@ -1646,7 +1648,7 @@ static int amstream_release(struct inode *inode, struct file *file)
 	}
 
 	kfree(priv);
-
+	p_file = NULL;
 	mutex_unlock(&amstream_mutex);
 	return 0;
 }
@@ -3585,7 +3587,12 @@ struct stream_buf_s *get_stream_buffer(int id)
 		return 0;
 	return &bufs[id];
 }
+struct file *get_pfile(void)
+{
+	return p_file;
+}
 EXPORT_SYMBOL(get_stream_buffer);
+EXPORT_SYMBOL(get_pfile);
 
 static const struct of_device_id amlogic_mesonstream_dt_match[] = {
 	{

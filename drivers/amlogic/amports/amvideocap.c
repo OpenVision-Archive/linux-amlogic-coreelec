@@ -666,6 +666,11 @@ static int amvideocap_capture_one_frame(
 	w = (w < CAP_WIDTH_MAX) ? w : CAP_WIDTH_MAX;
 	h = (h < CAP_HEIGHT_MAX) ? h : CAP_HEIGHT_MAX;
 
+	if (w % 32 != 0)
+		w = 32 * (w / 32);
+	if (h % 32 != 0)
+		h = 32 * (h / 32);
+
 	ret = amvideocap_capture_one_frame_l(priv, curindex, w, h, vf,
 						priv->want.fmt);
 	amvideocap_capture_put_frame(priv, vf);
