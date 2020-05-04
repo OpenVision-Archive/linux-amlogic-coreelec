@@ -571,6 +571,9 @@ static int set_disp_mode_auto(void)
 	 */
 	if ((strncmp(info->name, "480cvbs", 7) == 0) ||
 		(strncmp(info->name, "576cvbs", 7) == 0) ||
+		(strncmp(info->name, "ntsc_m", 6) == 0) ||
+		(strncmp(info->name, "pal_m", 5) == 0) ||
+		(strncmp(info->name, "pal_n", 5) == 0) ||
 		(strncmp(info->name, "panel", 5) == 0) ||
 		(strncmp(info->name, "null", 4) == 0)) {
 		hdmi_print(ERR, VID "%s not valid hdmi mode\n", info->name);
@@ -1505,6 +1508,33 @@ const char *disp_mode_t[] = {
 	"2160p60hz",
 	"2160p50hz420",
 	"2160p60hz420",
+	/* VESA modes */
+	"640x480p60hz",
+	"800x480p60hz",
+	"800x600p60hz",
+	"852x480p60hz",
+	"854x480p60hz",
+	"1024x600p60hz",
+	"1024x768p60hz",
+	"1152x864p75hz",
+	"1280x600p60hz",
+	"1280x768p60hz",
+	"1280x800p60hz",
+	"1280x960p60hz",
+	"1280x1024p60hz",
+	"1360x768p60hz",
+	"1366x768p60hz",
+	"1400x1050p60hz",
+	"1440x900p60hz",
+	"1600x900p60hz",
+	"1600x1200p60hz",
+	"1680x1050p60hz",
+	"1920x1200p60hz",
+	"2160x1200p90hz",
+	"2560x1080p60hz",
+	"2560x1440p60hz",
+	"2560x1600p60hz",
+	"3440x1440p60hz",
 	NULL
 };
 

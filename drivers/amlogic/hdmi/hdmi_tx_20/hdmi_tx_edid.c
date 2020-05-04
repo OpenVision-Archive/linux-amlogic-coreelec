@@ -124,7 +124,7 @@ static int Edid_DecodeHeader(struct hdmitx_info *info, unsigned char *buff)
 	return ret;
 }
 
-static void Edid_ReceiverBrandNameParse(struct rx_cap *pRxCap,
+static void Edid_ParsingIDManufacturerName(struct rx_cap *pRxCap,
 		unsigned char *data)
 {
 	int i;
@@ -140,13 +140,36 @@ static void Edid_ReceiverBrandNameParse(struct rx_cap *pRxCap,
 	brand[2] = data[1] & 0x1f;
 
 	for (i = 0; i < 3; i++)
-		pRxCap->ReceiverBrandName[i] = uppercase[brand[i] - 1];
+		pRxCap->IDManufacturerName[i] = uppercase[brand[i] - 1];
+}
+
+static void Edid_ParsingIDProductCode(struct rx_cap *pRXCap,
+		unsigned char *data)
+{
+	if (data == NULL)
+		return;
+	pRXCap->IDProductCode[0] = data[1];
+	pRXCap->IDProductCode[1] = data[0];
+	return;
+}
+
+static void Edid_ParsingIDSerialNumber(struct rx_cap *pRXCap,
+		unsigned char *data)
+{
+	int i;
+
+	if (data == NULL)
+		return;
+	for (i = 0; i < 4; i++)
+		pRXCap->IDSerialNumber[i] = data[3-i];
+	return;
 }
 
 static int Edid_find_name_block(unsigned char *data)
 {
 	int ret = 0;
 	int i;
+
 	for (i = 0; i < 3; i++) {
 		if (data[i])
 			return ret;
@@ -1371,7 +1394,6 @@ static int hdmitx_edid_block_parse(struct hdmitx_dev *hdmitx_device,
 	pRXCap->native_Mode = BlockBuf[3];
 	pRXCap->number_of_dtd += BlockBuf[3] & 0xf;
 
-	pRXCap->VIC_count = 0;
 	pRXCap->native_VIC = 0xff;
 
 	Edid_Y420CMDB_Reset(&(hdmitx_device->hdmi_info));
@@ -1380,7 +1402,7 @@ static int hdmitx_edid_block_parse(struct hdmitx_dev *hdmitx_device,
 		count = BlockBuf[offset] & 0x1f;
 		switch (tag) {
 		case HDMI_EDID_BLOCK_TYPE_AUDIO:
-			pRXCap->AUD_count = count/3;
+			pRXCap->AUD_count += count/3;
 			offset++;
 			for (i = 0 ; i < pRXCap->AUD_count ; i++) {
 				pRXCap->RxAudioCap[i].audio_format_code =
@@ -1644,7 +1666,7 @@ static int edid_check_valid(unsigned char *buf)
 		return 0;
 
 	/* check block 1 extension tag */
-	if (buf[0x80] != 0x2)
+	if (!((buf[0x80] == 0x2) || (buf[0x80] == 0xf0)))
 		return 0;
 
 	/* check block 1 checksum */
@@ -1679,7 +1701,8 @@ int check_dvi_hdmi_edid_valid(unsigned char *buf)
 
 	if (buf[0x7e] == 0)/* check Extension flag at block 0 */
 		return 1;
-	else if (buf[0x80] != 0x2)/* check block 1 extension tag */
+	/* check block 1 extension tag */
+	else if (!((buf[0x80] == 0x2) || (buf[0x80] == 0xf0)))
 		return 0;
 
 	/* check block 1 checksum */
@@ -1890,8 +1913,9 @@ int hdmitx_edid_parse(struct hdmitx_dev *hdmitx_device)
 		/* return -1 ; */
 	}
 
-	Edid_ReceiverBrandNameParse(&hdmitx_device->RXCap, &EDID_buf[8]);
-
+	Edid_ParsingIDManufacturerName(&hdmitx_device->RXCap, &EDID_buf[8]);
+	Edid_ParsingIDProductCode(&hdmitx_device->RXCap, &EDID_buf[0x0A]);
+	Edid_ParsingIDSerialNumber(&hdmitx_device->RXCap, &EDID_buf[0x0C]);
 	idx[0] = EDID_DETAILED_TIMING_DES_BLOCK0_POS;
 	idx[1] = EDID_DETAILED_TIMING_DES_BLOCK1_POS;
 	idx[2] = EDID_DETAILED_TIMING_DES_BLOCK2_POS;
@@ -1994,13 +2018,7 @@ int hdmitx_edid_parse(struct hdmitx_dev *hdmitx_device)
 			}
 		}
 
-		if (EDID_buf[i*128+0] == 0x2) {
-			if (hdmitx_edid_block_parse(hdmitx_device,
-				&(EDID_buf[i*128])) >= 0) {
-				if (hdmitx_device->RXCap.IEEEOUI == 0x0c03)
-					break;
-			}
-		}
+		hdmitx_edid_block_parse(hdmitx_device, &(EDID_buf[i*128]));
 	}
 
 /*
@@ -2132,6 +2150,46 @@ static struct dispmode_vic dispmode_vic_tab[] = {
 	{"2160p50hz", HDMI_4k2k_50},
 	{"2160p60hz420", HDMI_3840x2160p60_16x9_Y420},
 	{"2160p50hz420", HDMI_3840x2160p50_16x9_Y420},
+	{"640x480p60hz", HDMIV_640x480p60hz},
+	{"800x480p60hz", HDMIV_800x480p60hz},
+	{"800x600p60hz", HDMIV_800x600p60hz},
+	{"852x480p60hz", HDMIV_852x480p60hz},
+	{"854x480p60hz", HDMIV_854x480p60hz},
+	{"1024x600p60hz", HDMIV_1024x600p60hz},
+	{"1024x768p60hz", HDMIV_1024x768p60hz},
+	{"1152x864p75hz", HDMIV_1152x864p75hz},
+	{"1280x600p60hz", HDMIV_1280x600p60hz},
+	{"1280x768p60hz", HDMIV_1280x768p60hz},
+	{"1280x800p60hz", HDMIV_1280x800p60hz},
+	{"1280x960p60hz", HDMIV_1280x960p60hz},
+	{"1280x1024p60hz", HDMIV_1280x1024p60hz},
+/*
+/sys/class/display # echo 1280x1024p60hz > mode
+vout_serve: vmode set to 1280x1024p60hz
+vout_serve: disable HDMI PHY as soon as possible
+tv_vout: tv_set_current_vmode[671]fps_target_mode=43
+tv_vout: mode is 43,sync_duration_den=1,sync_duration_num=60
+tv_vout: TV mode 1280x1024p60hz selected.
+tv_vout: new mode =1280x1024 set ok
+vout_serve: vinfo mode is: 1280x1024
+vout_serve: new mode 1280x1024p60hz
+ set ok
+hdmitx: video: get current mode: 1280x1024
+ */
+	{"1280x1024", HDMIV_1280x1024p60hz}, /* alias of "1280x1024p60hz" */
+	{"1360x768p60hz", HDMIV_1360x768p60hz},
+	{"1366x768p60hz", HDMIV_1366x768p60hz},
+	{"1400x1050p60hz", HDMIV_1400x1050p60hz},
+	{"1440x900p60hz", HDMIV_1440x900p60hz},
+	{"1600x900p60hz", HDMIV_1600x900p60hz},
+	{"1600x1200p60hz", HDMIV_1600x1200p60hz},
+	{"1680x1050p60hz", HDMIV_1680x1050p60hz},
+	{"1920x1200p60hz", HDMIV_1920x1200p60hz},
+	{"2160x1200p90hz", HDMIV_2160x1200p90hz},
+	{"2560x1080p60hz", HDMIV_2560x1080p60hz},
+	{"2560x1440p60hz", HDMIV_2560x1440p60hz},
+	{"2560x1600p60hz", HDMIV_2560x1600p60hz},
+	{"3440x1440p60hz", HDMIV_3440x1440p60hz},
 };
 
 int hdmitx_edid_VIC_support(enum hdmi_vic vic)
@@ -2467,7 +2525,17 @@ int hdmitx_edid_dump(struct hdmitx_dev *hdmitx_device, char *buffer,
 	struct rx_cap *pRXCap = &(hdmitx_device->RXCap);
 
 	pos += snprintf(buffer+pos, buffer_len-pos,
-		"Rx Brand Name: %s\n", pRXCap->ReceiverBrandName);
+		"Rx Manufacturer Name: %s\n", pRXCap->IDManufacturerName);
+	pos += snprintf(buffer+pos, buffer_len-pos,
+		"Rx Product Code: %02x%02x\n",
+		pRXCap->IDProductCode[0],
+		pRXCap->IDProductCode[1]);
+	pos += snprintf(buffer+pos, buffer_len-pos,
+		"Rx Serial Number: %02x%02x%02x%02x\n",
+		pRXCap->IDSerialNumber[0],
+		pRXCap->IDSerialNumber[1],
+		pRXCap->IDSerialNumber[2],
+		pRXCap->IDSerialNumber[3]);
 	pos += snprintf(buffer+pos, buffer_len-pos,
 		"Rx Product Name: %s\n", pRXCap->ReceiverProductName);
 
@@ -2522,8 +2590,9 @@ int hdmitx_edid_dump(struct hdmitx_dev *hdmitx_device, char *buffer,
 	}
 	pos += snprintf(buffer+pos, buffer_len-pos,
 		"Speaker Allocation: 0x%02x\n", pRXCap->RxSpeakerAllocation);
-	pos += snprintf(buffer+pos, buffer_len-pos, "Vendor: 0x%06x\n",
-		pRXCap->IEEEOUI);
+	pos += snprintf(buffer+pos, buffer_len-pos,
+		"Vendor: 0x%x ( %s device)\n",
+		pRXCap->IEEEOUI, (pRXCap->IEEEOUI)?"HDMI":"DVI");
 
 	pos += snprintf(buffer+pos, buffer_len-pos,
 		"MaxTMDSClock1 %d MHz%s\n", pRXCap->Max_TMDS_Clock1 * 5, pRXCap->Max_TMDS_Clock1 == 1 ? " or less" : "");
@@ -2561,7 +2630,6 @@ int hdmitx_edid_dump(struct hdmitx_dev *hdmitx_device, char *buffer,
 			edid_checkvalue[1],
 			edid_checkvalue[2],
 			edid_checkvalue[3]);
-
 	return pos;
 }
 

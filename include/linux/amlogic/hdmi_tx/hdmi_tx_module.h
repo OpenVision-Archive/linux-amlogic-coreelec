@@ -51,13 +51,14 @@ struct rx_audiocap {
 enum hd_ctrl {
 	VID_EN, VID_DIS, AUD_EN, AUD_DIS, EDID_EN, EDID_DIS, HDCP_EN, HDCP_DIS,
 };
-
+#define VESA_MAX_TIMING 64
 struct rx_cap {
 	unsigned int native_Mode;
 	/*video*/
 	unsigned int VIC[VIC_MAX_NUM];
 	unsigned int VIC_count;
 	unsigned int native_VIC;
+	enum hdmi_vic vesa_timing[VESA_MAX_TIMING]; /* Max 64 */
 	/*audio*/
 	struct rx_audiocap RxAudioCap[AUD_MAX_NUM];
 	unsigned char AUD_count;
@@ -87,7 +88,9 @@ struct rx_cap {
 	unsigned char hdr_lum_max;
 	unsigned char hdr_lum_avg;
 	unsigned char hdr_lum_min;
-	unsigned char ReceiverBrandName[4];
+	unsigned char IDManufacturerName[4];
+	unsigned char IDProductCode[2];
+	unsigned char IDSerialNumber[4];
 	unsigned char ReceiverProductName[16];
 	unsigned char manufacture_week;
 	unsigned char manufacture_year;
